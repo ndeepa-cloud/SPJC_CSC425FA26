@@ -6,6 +6,7 @@ import StudentDashboard from './StudentDashboard'
 import FacultyDashboard from './FacultyDashboard'
 import AdminDashboard from './AdminDashboard'
 
+
 function App() {
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(window.location.hash)
@@ -64,9 +65,11 @@ function App() {
               />
             </div>
 
-            <div>
-              <h1>CSC425FA26 Course Project</h1>
-              <h2>SPJC</h2>
+            
+              <div className="day1-card">
+  <h1>CSC425FA26 Course Project</h1>
+  <h2>SPJC</h2>
+
             </div>
 
             <button
