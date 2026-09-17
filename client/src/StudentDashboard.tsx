@@ -1,29 +1,58 @@
 import { useState } from 'react'
 
 function StudentDashboard() {
-  const [grade, setGrade] = useState("A")
+  const [grades, setGrades] = useState<string[]>(["A", "B", "C", "A"])
 
-  let gradePoint
+  function getGradePoint(grade: string) {
+    if (grade === "A") {
+      return 4.0
+    } else if (grade === "B") {
+      return 3.0
+    } else if (grade === "C") {
+      return 2.0
+    } else if (grade === "D") {
+      return 1.0
+    } else {
+      return 0.0
+    }
+  }
 
-  if (grade === "A") {
-    gradePoint = 4.0
-  } else if (grade === "B") {
-    gradePoint = 3.0
-  } else if (grade === "C") {
-    gradePoint = 2.0
-  } else if (grade === "D") {
-    gradePoint = 1.0
-  } else {
-    gradePoint = 0.0
+  function changeGrade(index: number, newGrade: string) {
+    const updatedGrades = [...grades]
+    updatedGrades[index] = newGrade
+    setGrades(updatedGrades)
+  }
+
+  function addCourse() {
+    setGrades([...grades, "A"])
+  }
+
+  function removeCourse(index: number) {
+    const updatedGrades = grades.filter((_, i) => i !== index)
+    setGrades(updatedGrades)
+  }
+
+  let totalPoints = 0
+
+  for (let i = 0; i < grades.length; i++) {
+    totalPoints = totalPoints + getGradePoint(grades[i])
+  }
+
+  let gpa = 0
+
+  if (grades.length > 0) {
+    gpa = totalPoints / grades.length
   }
 
   let gpaStatus
 
-  if (gradePoint === 4.0) {
+  if (grades.length === 0) {
+    gpaStatus = "No grades entered"
+  } else if (gpa >= 3.5) {
     gpaStatus = "Excellent"
-  } else if (gradePoint >= 3.0) {
+  } else if (gpa >= 3.0) {
     gpaStatus = "Good"
-  } else if (gradePoint >= 2.0) {
+  } else if (gpa >= 2.0) {
     gpaStatus = "Fair"
   } else {
     gpaStatus = "Needs improvement"
@@ -46,8 +75,8 @@ function StudentDashboard() {
         </p>
 
         <p className="demo-note">
-          Course project preview. Select a grade to view its GPA value
-          and academic status.
+          Course project preview. Select a grade for each course to calculate
+          your GPA and view your academic standing.
         </p>
       </header>
 
@@ -81,35 +110,59 @@ function StudentDashboard() {
 
       <div className="dashboard-grid">
 
-        {/* GPA */}
+        {/* GPA Calculator */}
         <section
           id="gpa"
           className="dashboard-card"
           aria-labelledby="gpa-heading"
           tabIndex={-1}
         >
-          <h2 id="gpa-heading">GPA</h2>
+          <h2 id="gpa-heading">GPA Calculator</h2>
 
-          <p className="metric">{gradePoint.toFixed(1)}</p>
+          {grades.map((courseGrade, index) => (
+            <div key={index}>
+              <label htmlFor={`course-${index}`}>
+                Course {index + 1} Grade:
+              </label>
 
-          <label htmlFor="grade-select">
-            Select Grade:
-          </label>
+              <select
+                id={`course-${index}`}
+                value={courseGrade}
+                onChange={(event) =>
+                  changeGrade(index, event.target.value)
+                }
+              >
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="F">F</option>
+              </select>
 
-          <select
-            id="grade-select"
-            value={grade}
-            onChange={(event) => setGrade(event.target.value)}
-          >
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-            <option value="D">D</option>
-            <option value="F">F</option>
-          </select>
+              {grades.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeCourse(index)}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
 
-          <p>Selected Grade: {grade}</p>
-          <p>Status: {gpaStatus}</p>
+          <button type="button" onClick={addCourse}>
+            + Add Course
+          </button>
+
+          <h3>Calculated GPA</h3>
+
+          <p className="metric">
+            {grades.length > 0 ? gpa.toFixed(2) : "--"}
+          </p>
+
+          <p>
+            Academic Standing: {gpaStatus}
+          </p>
         </section>
 
         {/* Attendance */}
@@ -156,10 +209,19 @@ function StudentDashboard() {
             GPA Status: {gpaStatus}
           </p>
 
-          <p>
-            Your current selected grade is {grade}, which represents a
-            GPA value of {gradePoint.toFixed(1)}.
-          </p>
+          {grades.length === 0 ? (
+            <p>
+              Add courses to calculate your GPA.
+            </p>
+          ) : gpa < 2.0 ? (
+            <p>
+              Warning: Your GPA is below 2.0. Academic improvement is needed.
+            </p>
+          ) : (
+            <p>
+              Your current calculated GPA is {gpa.toFixed(2)}.
+            </p>
+          )}
         </section>
 
         {/* Upcoming Courses */}
@@ -188,12 +250,23 @@ function StudentDashboard() {
         >
           <h2 id="grades-heading">Student Grades</h2>
 
-          <p className="status-label">Not connected</p>
-
-          <p>
-            Your course grades and academic results will appear here when
-            grade records are connected.
+          <p className="status-label">
+            {grades.length > 0 ? "Grades entered" : "No grades entered"}
           </p>
+
+          {grades.length > 0 ? (
+            <ul>
+              {grades.map((courseGrade, index) => (
+                <li key={index}>
+                  Course {index + 1}: {courseGrade}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>
+              Add courses using the GPA calculator to view grades here.
+            </p>
+          )}
         </section>
 
       </div>
