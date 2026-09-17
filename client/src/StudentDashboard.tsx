@@ -1,7 +1,34 @@
-// This role component supplies content; App.css supplies the shared layout.
-// Keep these examples separate from live records until a data source is connected.
+import { useState } from 'react'
 
 function StudentDashboard() {
+  const [grade, setGrade] = useState("A")
+
+  let gradePoint
+
+  if (grade === "A") {
+    gradePoint = 4.0
+  } else if (grade === "B") {
+    gradePoint = 3.0
+  } else if (grade === "C") {
+    gradePoint = 2.0
+  } else if (grade === "D") {
+    gradePoint = 1.0
+  } else {
+    gradePoint = 0.0
+  }
+
+  let gpaStatus
+
+  if (gradePoint === 4.0) {
+    gpaStatus = "Excellent"
+  } else if (gradePoint >= 3.0) {
+    gpaStatus = "Good"
+  } else if (gradePoint >= 2.0) {
+    gpaStatus = "Fair"
+  } else {
+    gpaStatus = "Needs improvement"
+  }
+
   return (
     <main
       id="student-dashboard"
@@ -19,8 +46,8 @@ function StudentDashboard() {
         </p>
 
         <p className="demo-note">
-          Course project preview. GPA and attendance are sample values;
-          other records are not connected.
+          Course project preview. Select a grade to view its GPA value
+          and academic status.
         </p>
       </header>
 
@@ -53,6 +80,8 @@ function StudentDashboard() {
       </nav>
 
       <div className="dashboard-grid">
+
+        {/* GPA */}
         <section
           id="gpa"
           className="dashboard-card"
@@ -61,11 +90,29 @@ function StudentDashboard() {
         >
           <h2 id="gpa-heading">GPA</h2>
 
-          <p className="metric">3.5</p>
+          <p className="metric">{gradePoint.toFixed(1)}</p>
 
-          <p>Current GPA · sample value</p>
+          <label htmlFor="grade-select">
+            Select Grade:
+          </label>
+
+          <select
+            id="grade-select"
+            value={grade}
+            onChange={(event) => setGrade(event.target.value)}
+          >
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="F">F</option>
+          </select>
+
+          <p>Selected Grade: {grade}</p>
+          <p>Status: {gpaStatus}</p>
         </section>
 
+        {/* Attendance */}
         <section
           id="attendance"
           className="dashboard-card"
@@ -79,6 +126,7 @@ function StudentDashboard() {
           <p>Current attendance · sample value</p>
         </section>
 
+        {/* Transcript */}
         <section
           id="transcript"
           className="dashboard-card"
@@ -95,6 +143,7 @@ function StudentDashboard() {
           </p>
         </section>
 
+        {/* Alerts */}
         <section
           id="alerts"
           className="dashboard-card"
@@ -104,15 +153,16 @@ function StudentDashboard() {
           <h2 id="alerts-heading">Alerts</h2>
 
           <p className="status-label">
-            Sample status: no new academic alerts
+            GPA Status: {gpaStatus}
           </p>
 
           <p>
-            Check here for academic reminders and notices.
-            Live alerts are not connected.
+            Your current selected grade is {grade}, which represents a
+            GPA value of {gradePoint.toFixed(1)}.
           </p>
         </section>
 
+        {/* Upcoming Courses */}
         <section
           id="courses"
           className="dashboard-card"
@@ -129,6 +179,7 @@ function StudentDashboard() {
           </p>
         </section>
 
+        {/* Student Grades */}
         <section
           id="grades"
           className="dashboard-card"
@@ -144,6 +195,7 @@ function StudentDashboard() {
             grade records are connected.
           </p>
         </section>
+
       </div>
     </main>
   )
