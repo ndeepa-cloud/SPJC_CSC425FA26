@@ -64,7 +64,6 @@ function App() {
                 alt="SPJC logo"
               />
             </div>
-
             
               <div className="day1-card">
   <h1>CSC425FA26 Course Project</h1>

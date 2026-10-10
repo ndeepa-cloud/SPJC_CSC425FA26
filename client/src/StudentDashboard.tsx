@@ -1,4 +1,6 @@
+import WeatherCard from "./WeatherCard";
 import { useState } from 'react'
+import TranscriptCard from './TranscriptCard'
 
 function StudentDashboard() {
   const [grades, setGrades] = useState<string[]>(["A", "B", "C", "A"])
@@ -180,21 +182,7 @@ function StudentDashboard() {
         </section>
 
         {/* Transcript */}
-        <section
-          id="transcript"
-          className="dashboard-card"
-          aria-labelledby="transcript-heading"
-          tabIndex={-1}
-        >
-          <h2 id="transcript-heading">Transcript</h2>
-
-          <p className="status-label">Not connected</p>
-
-          <p>
-            Completed courses, credit hours, and final grades will appear here
-            when academic records are connected.
-          </p>
-        </section>
+<TranscriptCard id="transcript" />
 
         {/* Alerts */}
         <section
@@ -270,6 +258,7 @@ function StudentDashboard() {
         </section>
 
       </div>
+      <WeatherCard/>
     </main>
   )
 }
