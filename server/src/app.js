@@ -9,6 +9,13 @@ export const app = express()
 // Hard-coded data for the Student Lookup exercise. These are fictional people.
 // Students can edit this array to test their frontend without a database,
 // SQL queries, credentials, or a .env file. Keep student IDs as strings.
+// Fictional attendance records for the Module 9 Attendance API Lab.
+// Stored in memory, so no database connection is required.
+const attendance = [
+  { id: 1, student: 'Alice Johnson', date: '2026-09-01', status: 'present' },
+  { id: 2, student: 'Bob Martinez', date: '2026-09-01', status: 'absent' },
+  { id: 3, student: 'Carol Williams', date: '2026-09-01', status: 'late' },
+]
 const mockStudents = [
   {
     studentID: '1001',
@@ -87,6 +94,23 @@ teachingApi.get('/transcripts/:studentID', getTranscript)
 
 // These handlers finish before the original starter API's CORS middleware.
 app.use('/api', teachingApi)
+// Module 9: Return all attendance records.
+
+app.get('/api/attendance', (_request, response) => {
+  response.status(200).json(attendance)
+})
+// Module 9: Return one attendance record by ID.
+app.get('/api/attendance/:id', (request, response) => {
+  const id = parseInt(request.params.id, 10)
+
+  const record = attendance.find((item) => item.id === id)
+
+  if (!record) {
+    return response.status(404).json({ error: 'Record not found' })
+  }
+
+  response.status(200).json(record)
+})
 
 app.use(cors({ origin: 'http://localhost:5173' }))
 app.use(express.json())
