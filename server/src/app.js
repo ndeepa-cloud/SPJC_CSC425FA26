@@ -2,8 +2,7 @@ import 'dotenv/config'
 import { readFileSync } from 'node:fs'
 import cors from 'cors'
 import express from 'express'
-import { checkDatabase } from './db.js'
-
+import { checkDatabase, pool } from './db.js'
 export const app = express()
 
 // Hard-coded data for the Student Lookup exercise. These are fictional people.
@@ -130,7 +129,10 @@ app.get('/api/attendance/:id', (request, response) => {
   response.status(200).json(record)
 })
 
-app.use(cors({ origin: 'http://localhost:5173' }))
+// Allow React frontend on either Vite development port
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174']
+}))
 app.use(express.json())
 
 app.get('/', (_request, response) => {
@@ -143,6 +145,8 @@ app.get('/', (_request, response) => {
       transcriptQuery: '/api/transcripts?studentID=1001',
       status: '/api/status',
       databaseHealth: '/api/health',
+      databaseStudents: '/api/db/students',
+      databaseStudentById: '/api/db/students/:id',
     },
   })
 })
@@ -154,5 +158,206 @@ app.get('/api/health', async (_request, response) => {
   } catch (error) {
     console.error('Database health check failed:', error.message)
     response.status(503).json({ status: 'error', database: 'disconnected', message: error.message })
+  }
+})
+
+// Module 10: Retrieve students from PostgreSQL
+app.get('/api/db/students', async (_request, response) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM students ORDER BY student_id'
+    )
+
+    response.status(200).json({
+      students: result.rows,
+    })
+  } catch (error) {
+    console.error('Failed to fetch students:', error.message)
+
+    response.status(500).json({
+      error: 'DATABASE_ERROR',
+      message: 'Unable to retrieve students',
+    })
+  }
+})
+
+// Module 10: Create a new student in PostgreSQL
+app.post('/api/db/students', async (request, response) => {
+  const { student_id, first_name, last_name, email } = request.body ?? {}
+
+  if (
+    !Number.isInteger(student_id) ||
+    typeof first_name !== 'string' || !first_name.trim() ||
+    typeof last_name !== 'string' || !last_name.trim() ||
+    typeof email !== 'string' || !email.trim()
+  ) {
+    return response.status(400).json({
+      error: 'INVALID_INPUT',
+      message: 'Provide a valid student ID, first name, last name, and email.',
+    })
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO students (student_id, first_name, last_name, email)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [student_id, first_name.trim(), last_name.trim(), email.trim()]
+    )
+
+    return response.status(201).json({
+      message: 'Student created successfully',
+      student: result.rows[0],
+    })
+  } catch (error) {
+    console.error('Failed to create student:', error.message)
+
+    if (error.code === '23505') {
+      return response.status(409).json({
+        error: 'DUPLICATE_STUDENT',
+        message: 'Student ID or email already exists.',
+      })
+    }
+
+    return response.status(500).json({
+      error: 'DATABASE_ERROR',
+      message: 'Unable to create student.',
+    })
+  }
+})
+
+// Module 10: Update an existing student in PostgreSQL
+app.patch('/api/db/students/:id', async (request, response) => {
+  const studentId = Number(request.params.id)
+  const { first_name, last_name, email } = request.body ?? {}
+
+  if (
+    !Number.isInteger(studentId) ||
+    studentId <= 0 ||
+    typeof first_name !== 'string' || !first_name.trim() ||
+    typeof last_name !== 'string' || !last_name.trim() ||
+    typeof email !== 'string' || !email.trim()
+  ) {
+    return response.status(400).json({
+      error: 'INVALID_INPUT',
+      message: 'Provide a valid student ID, first name, last name, and email.',
+    })
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE students
+       SET first_name = $1,
+           last_name = $2,
+           email = $3
+       WHERE student_id = $4
+       RETURNING *`,
+      [first_name.trim(), last_name.trim(), email.trim(), studentId]
+    )
+
+    if (result.rows.length === 0) {
+      return response.status(404).json({
+        error: 'STUDENT_NOT_FOUND',
+        message: 'Student does not exist.',
+      })
+    }
+
+    return response.status(200).json({
+      message: 'Student updated successfully',
+      student: result.rows[0],
+    })
+  } catch (error) {
+    console.error('Failed to update student:', error.message)
+
+    if (error.code === '23505') {
+      return response.status(409).json({
+        error: 'DUPLICATE_EMAIL',
+        message: 'Email already exists.',
+      })
+    }
+
+    return response.status(500).json({
+      error: 'DATABASE_ERROR',
+      message: 'Unable to update student.',
+    })
+  }
+})
+
+// MODULE 10 — READ ONE STUDENT (GET)
+app.get('/api/db/students/:id', async (request, response) => {
+  const studentId = Number(request.params.id)
+
+  if (!Number.isSafeInteger(studentId) || studentId <= 0) {
+    return response.status(400).json({
+      error: 'INVALID_STUDENT_ID',
+    })
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT * FROM students WHERE student_id = $1',
+      [studentId]
+    )
+
+    if (result.rows.length === 0) {
+      return response.status(404).json({
+        error: 'STUDENT_NOT_FOUND',
+      })
+    }
+
+    return response.status(200).json({
+      student: result.rows[0],
+    })
+  } catch (error) {
+    console.error('Failed to retrieve student:', error.message)
+
+    return response.status(500).json({
+      error: 'DATABASE_ERROR',
+      message: 'Unable to retrieve student.',
+    })
+  }
+})
+
+// MODULE 10 — DELETE STUDENT (DELETE)
+
+app.delete('/api/db/students/:id', async (request, response) => {
+  const studentId = Number(request.params.id)
+
+  if (!Number.isSafeInteger(studentId) || studentId <= 0) {
+    return response.status(400).json({
+      error: 'INVALID_STUDENT_ID',
+    })
+  }
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM students WHERE student_id = $1 RETURNING *',
+      [studentId]
+    )
+
+    if (result.rows.length === 0) {
+      return response.status(404).json({
+        error: 'STUDENT_NOT_FOUND',
+      })
+    }
+
+    return response.status(200).json({
+      message: 'Student deleted successfully',
+      student: result.rows[0],
+    })
+  } catch (error) {
+    console.error('Failed to delete student:', error.message)
+
+    if (error.code === '23503') {
+      return response.status(409).json({
+        error: 'STUDENT_HAS_ENROLLMENTS',
+        message: 'Remove student enrollments before deleting this student.',
+      })
+    }
+
+    return response.status(500).json({
+      error: 'DATABASE_ERROR',
+      message: 'Unable to delete student.',
+    })
   }
 })
